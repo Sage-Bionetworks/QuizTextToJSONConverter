@@ -24,6 +24,10 @@ public class QuizTextToJSONConverter {
 	private static final String WIKI_ENTITY_PREFIX = "https://www.synapse.org/#!Wiki:";
 	private static final String WIKI_ID_PREFIX = "/ENTITY/";
 	
+	public static final boolean VERBOSE = false;
+	
+	public static void o(Object s) {System.out.println(s);}
+	
 	public static void main(String[] args) throws Exception {
 		QuizGenerator gen = new QuizGenerator();
 		gen.setId(1L);
@@ -49,6 +53,7 @@ public class QuizTextToJSONConverter {
 			if (lineCount==1) {
 				// very first line
 				gen.setHeader(s);
+				if (VERBOSE) o("Header:\n"+s);
 			} else if (startQuestionVariety) {
 				if (s.length()==0) continue; // extra blank line
 				wikiEntityId = null;
@@ -71,11 +76,14 @@ public class QuizTextToJSONConverter {
 				MultichoiceQuestion q = new MultichoiceQuestion();
 				q.setExclusive(true);
 				q.setPrompt(s);
-				WikiPageKey reference = new WikiPageKey();
-				reference.setOwnerObjectType(ObjectType.ENTITY);
-				reference.setOwnerObjectId(wikiEntityId);
-				reference.setWikiPageId(wikiId);
-				q.setReference(reference);
+				if (VERBOSE) o("Prompt: "+s);
+				if (wikiEntityId!=null && wikiId!=null) {
+					WikiPageKey reference = new WikiPageKey();
+					reference.setOwnerObjectType(ObjectType.ENTITY);
+					reference.setOwnerObjectId(wikiEntityId);
+					reference.setWikiPageId(wikiId);
+					q.setReference(reference);
+				}
 				q.setQuestionIndex(questionIndex++);
 				answers = new ArrayList<MultichoiceAnswer>();
 				q.setAnswers(answers);
@@ -84,10 +92,17 @@ public class QuizTextToJSONConverter {
 				questionOptions.add(q);
 				startQuestion=false;
 				responseIndex = 0;
-			} else if (s.length()==0){
-				startQuestion=true;
-				QuestionVariety qv = qvs.get(qvs.size()-1);
-				if (qv.getQuestionOptions().size()>=NUM_QUESTIONS_PER_VARIETY) startQuestionVariety = true;
+			} else if (s.length()==0) {
+				List<Question> currentQuestionVariety = qvs.get(qvs.size()-1).getQuestionOptions();
+				MultichoiceQuestion currentQuestion = (MultichoiceQuestion)currentQuestionVariety.get(currentQuestionVariety.size()-1);
+				if (currentQuestion.getAnswers().size()==0) {
+					// extra white space preceding the first answer, continue
+					continue;
+				} else {
+					startQuestion=true;
+					QuestionVariety qv = qvs.get(qvs.size()-1);
+					if (qv.getQuestionOptions().size()>=NUM_QUESTIONS_PER_VARIETY) startQuestionVariety = true;
+				}
 			} else {
 				// it's a response
 				boolean isCorrect = false;
@@ -112,7 +127,7 @@ public class QuizTextToJSONConverter {
 		gen.setMinimumScore((long)gen.getQuestions().size()-1);
 		
 		// some light validation
-		if (gen.getQuestions().size()!=10) 
+		if (gen.getQuestions().size()!=17) 
 			throw new RuntimeException("Unexpected # of question varieties: "+gen.getQuestions().size());
 		for (QuestionVariety var : gen.getQuestions()) {
 			if (var.getQuestionOptions().size()!=3)
