@@ -71,6 +71,7 @@ public class QuizTextToJSONConverter {
 				List<Question> questionOptions = new ArrayList<Question>();
 				qv.setQuestionOptions(questionOptions);
 				startQuestionVariety=false;
+				if (VERBOSE) o("New Question Variety found: wiki entity id="+wikiEntityId + "  wikiId=" + wikiId);
 			} else if (startQuestion) {
 				if (s.length()==0) continue; // extra blank line
 				MultichoiceQuestion q = new MultichoiceQuestion();
@@ -127,17 +128,16 @@ public class QuizTextToJSONConverter {
 		gen.setMinimumScore((long)gen.getQuestions().size()-1);
 		
 		// some light validation
-		if (gen.getQuestions().size()!=17) 
+		if (gen.getQuestions().size()!=15) 
 			throw new RuntimeException("Unexpected # of question varieties: "+gen.getQuestions().size());
 		for (QuestionVariety var : gen.getQuestions()) {
-			if (var.getQuestionOptions().size()!=3)
+			if (var.getQuestionOptions().size()!=3 && var.getQuestionOptions().size()!=1)
 				throw new RuntimeException("Unexpected # of question options: "+
 					var.getQuestionOptions().size());
 			for  (Question q : var.getQuestionOptions()) {
 				if (q.getPrompt().trim().length()==0) throw new RuntimeException("missing prompt");
 				if (q instanceof MultichoiceQuestion) {
 					MultichoiceQuestion mq = (MultichoiceQuestion)q;
-					if (mq.getAnswers().size()<2) throw new RuntimeException(""+mq.getAnswers().size()+" answers for "+q.getPrompt());
 					int correctCount = 0;
 					for (MultichoiceAnswer a : mq.getAnswers()) {
 						if (a.getIsCorrect()!=null && a.getIsCorrect()) correctCount++;
