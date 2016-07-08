@@ -8,8 +8,6 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.sagebionetworks.repo.model.ObjectType;
-import org.sagebionetworks.repo.model.dao.WikiPageKey;
 import org.sagebionetworks.repo.model.quiz.MultichoiceAnswer;
 import org.sagebionetworks.repo.model.quiz.MultichoiceQuestion;
 import org.sagebionetworks.repo.model.quiz.Question;
@@ -20,11 +18,8 @@ import org.sagebionetworks.schema.adapter.org.json.JSONObjectAdapterImpl;
 
 public class QuizTextToJSONConverter {
 	private static final int NUM_QUESTIONS_PER_VARIETY = 3;
-	
-	private static final String WIKI_ENTITY_PREFIX = "https://www.synapse.org/#!Wiki:";
-	private static final String WIKI_ID_PREFIX = "/ENTITY/";
-	
-	public static final boolean VERBOSE = false;
+	public static final String LINK = "LINK:";
+	public static final boolean VERBOSE = true;
 	
 	public static void o(Object s) {System.out.println(s);}
 	
@@ -43,8 +38,6 @@ public class QuizTextToJSONConverter {
 		long responseIndex = 0;
 		int lineCount= 0;
 		//String questionVarietyHeader = null;
-		String wikiEntityId = null;
-		String wikiId = null;
 		while (true) {
 			String s = br.readLine();
 			lineCount++;
@@ -54,37 +47,26 @@ public class QuizTextToJSONConverter {
 				// very first line
 				gen.setHeader(s);
 				if (VERBOSE) o("Header:\n"+s);
+			} else if (s.toUpperCase().indexOf(LINK) > -1) {
+				int i = s.toUpperCase().indexOf(LINK);
+				String linkUrl = s.substring(i + LINK.length());
+				QuestionVariety qv = qvs.get(qvs.size()-1);
+				List<Question> qo = qv.getQuestionOptions();
+				Question lastQuestion = qo.get(qo.size()-1);
+				lastQuestion.setDocLink(linkUrl.trim());
 			} else if (startQuestionVariety) {
 				if (s.length()==0) continue; // extra blank line
-				wikiEntityId = null;
-				wikiId = null;
-				int i = s.indexOf(WIKI_ENTITY_PREFIX);
-				if (i>=0) {
-					int j = s.indexOf(WIKI_ID_PREFIX, i+WIKI_ENTITY_PREFIX.length());
-					if (j>=0) {
-						wikiEntityId = s.substring(i+WIKI_ENTITY_PREFIX.length(), j);
-						wikiId = s.substring(j+WIKI_ID_PREFIX.length());
-					}
-				}
 				QuestionVariety qv = new QuestionVariety();
 				qvs.add(qv);
 				List<Question> questionOptions = new ArrayList<Question>();
 				qv.setQuestionOptions(questionOptions);
 				startQuestionVariety=false;
-				if (VERBOSE) o("New Question Variety found: wiki entity id="+wikiEntityId + "  wikiId=" + wikiId);
 			} else if (startQuestion) {
 				if (s.length()==0) continue; // extra blank line
 				MultichoiceQuestion q = new MultichoiceQuestion();
 				q.setExclusive(true);
 				q.setPrompt(s);
 				if (VERBOSE) o("Prompt: "+s);
-				if (wikiEntityId!=null && wikiId!=null) {
-					WikiPageKey reference = new WikiPageKey();
-					reference.setOwnerObjectType(ObjectType.ENTITY);
-					reference.setOwnerObjectId(wikiEntityId);
-					reference.setWikiPageId(wikiId);
-					q.setReference(reference);
-				}
 				q.setQuestionIndex(questionIndex++);
 				answers = new ArrayList<MultichoiceAnswer>();
 				q.setAnswers(answers);
