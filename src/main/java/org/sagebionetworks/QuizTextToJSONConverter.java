@@ -19,6 +19,8 @@ import org.sagebionetworks.schema.adapter.org.json.JSONObjectAdapterImpl;
 public class QuizTextToJSONConverter {
 	private static final int NUM_QUESTIONS_PER_VARIETY = 3;
 	public static final String LINK = "LINK:";
+	public static final String SYNOPSIS = "SYNOPSIS:";
+	 
 	public static final boolean VERBOSE = true;
 	
 	public static void o(Object s) {System.out.println(s);}
@@ -54,6 +56,23 @@ public class QuizTextToJSONConverter {
 				List<Question> qo = qv.getQuestionOptions();
 				Question lastQuestion = qo.get(qo.size()-1);
 				lastQuestion.setDocLink(linkUrl.trim());
+			} else if (s.toUpperCase().indexOf(SYNOPSIS) > -1) {
+				int i = s.toUpperCase().indexOf(SYNOPSIS);
+				StringBuilder synopsis = new StringBuilder();
+				synopsis.append(s.substring(i + SYNOPSIS.length()));
+				
+				//read Synopsis until we reach a blank line
+				String synopsisLine = br.readLine();
+				while(synopsisLine.trim().length() != 0) {
+					synopsis.append(synopsisLine + "\n");
+					synopsisLine = br.readLine();
+				}
+				
+				QuestionVariety qv = qvs.get(qvs.size()-1);
+				List<Question> qo = qv.getQuestionOptions();
+				Question lastQuestion = qo.get(qo.size()-1);
+				lastQuestion.setHelpText(synopsis.toString().trim());
+				
 			} else if (startQuestionVariety) {
 				if (s.length()==0) continue; // extra blank line
 				QuestionVariety qv = new QuestionVariety();
