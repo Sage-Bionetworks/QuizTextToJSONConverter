@@ -42,9 +42,6 @@ public class QuizTextToJSONConverter {
 		long questionIndex = 0;
 		long responseIndex = 0;
 		int lineCount= 0;
-		//String questionVarietyHeader = null;
-		String wikiEntityId = null;
-		String wikiId = null;
 		while (true) {
 			String s = br.readLine();
 			lineCount++;
@@ -56,16 +53,6 @@ public class QuizTextToJSONConverter {
 				if (VERBOSE) o("Header:\n"+s);
 			} else if (startQuestionVariety) {
 				if (s.length()==0) continue; // extra blank line
-				wikiEntityId = null;
-				wikiId = null;
-				int i = s.indexOf(WIKI_ENTITY_PREFIX);
-				if (i>=0) {
-					int j = s.indexOf(WIKI_ID_PREFIX, i+WIKI_ENTITY_PREFIX.length());
-					if (j>=0) {
-						wikiEntityId = s.substring(i+WIKI_ENTITY_PREFIX.length(), j);
-						wikiId = s.substring(j+WIKI_ID_PREFIX.length());
-					}
-				}
 				QuestionVariety qv = new QuestionVariety();
 				qvs.add(qv);
 				List<Question> questionOptions = new ArrayList<Question>();
@@ -77,13 +64,6 @@ public class QuizTextToJSONConverter {
 				q.setExclusive(true);
 				q.setPrompt(s);
 				if (VERBOSE) o("Prompt: "+s);
-				if (wikiEntityId!=null && wikiId!=null) {
-					WikiPageKey reference = new WikiPageKey();
-					reference.setOwnerObjectType(ObjectType.ENTITY);
-					reference.setOwnerObjectId(wikiEntityId);
-					reference.setWikiPageId(wikiId);
-					q.setReference(reference);
-				}
 				q.setQuestionIndex(questionIndex++);
 				answers = new ArrayList<MultichoiceAnswer>();
 				q.setAnswers(answers);
@@ -113,7 +93,7 @@ public class QuizTextToJSONConverter {
 				MultichoiceAnswer answer = new MultichoiceAnswer();
 				if (s.charAt(1)!=')') {
 					char letter = (char)('a'+responseIndex);
-					System.out.println("prepending "+letter+" to <"+s+">");
+					//System.out.println("prepending "+letter+" to <"+s+">");
 					s = letter+" "+s; // add 'a', 'b', etc. at front
 				}
 				answer.setPrompt(s); // the text already starts with a, b, c
@@ -127,10 +107,10 @@ public class QuizTextToJSONConverter {
 		gen.setMinimumScore((long)gen.getQuestions().size()-1);
 		
 		// some light validation
-		if (gen.getQuestions().size()!=17) 
+		if (gen.getQuestions().size()!=14) 
 			throw new RuntimeException("Unexpected # of question varieties: "+gen.getQuestions().size());
 		for (QuestionVariety var : gen.getQuestions()) {
-			if (var.getQuestionOptions().size()!=3)
+			if (var.getQuestionOptions().size()<2)
 				throw new RuntimeException("Unexpected # of question options: "+
 					var.getQuestionOptions().size());
 			for  (Question q : var.getQuestionOptions()) {
@@ -156,6 +136,7 @@ public class QuizTextToJSONConverter {
 		writer.close();
 		System.out.println(quizGeneratorAsString);
 		// format the output: http://www.freeformatter.com/json-formatter.html
+//		System.out.println("Number of question sets: "+gen.getQuestions().size());
 	}
 
 	
