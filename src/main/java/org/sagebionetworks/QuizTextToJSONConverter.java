@@ -8,8 +8,6 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.sagebionetworks.repo.model.ObjectType;
-import org.sagebionetworks.repo.model.dao.WikiPageKey;
 import org.sagebionetworks.repo.model.quiz.MultichoiceAnswer;
 import org.sagebionetworks.repo.model.quiz.MultichoiceQuestion;
 import org.sagebionetworks.repo.model.quiz.Question;
@@ -20,9 +18,6 @@ import org.sagebionetworks.schema.adapter.org.json.JSONObjectAdapterImpl;
 
 public class QuizTextToJSONConverter {
 	private static final int NUM_QUESTIONS_PER_VARIETY = 3;
-	
-	private static final String WIKI_ENTITY_PREFIX = "https://www.synapse.org/#!Wiki:";
-	private static final String WIKI_ID_PREFIX = "/ENTITY/";
 	
 	public static final boolean VERBOSE = false;
 	
@@ -107,10 +102,10 @@ public class QuizTextToJSONConverter {
 		gen.setMinimumScore((long)gen.getQuestions().size()-1);
 		
 		// some light validation
-		if (gen.getQuestions().size()!=14) 
+		if (gen.getQuestions().size()!=15) 
 			throw new RuntimeException("Unexpected # of question varieties: "+gen.getQuestions().size());
 		for (QuestionVariety var : gen.getQuestions()) {
-			if (var.getQuestionOptions().size()<2)
+			if (var.getQuestionOptions().size()!=NUM_QUESTIONS_PER_VARIETY && !var.equals(gen.getQuestions().get(gen.getQuestions().size()-1)))
 				throw new RuntimeException("Unexpected # of question options: "+
 					var.getQuestionOptions().size());
 			for  (Question q : var.getQuestionOptions()) {
@@ -135,8 +130,7 @@ public class QuizTextToJSONConverter {
 		writer.write(quizGeneratorAsString);
 		writer.close();
 		System.out.println(quizGeneratorAsString);
-		// format the output: http://www.freeformatter.com/json-formatter.html
-//		System.out.println("Number of question sets: "+gen.getQuestions().size());
+		// format the output: https://www.freeformatter.com/json-formatter.html
 	}
 
 	
